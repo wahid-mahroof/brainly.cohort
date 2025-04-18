@@ -1,4 +1,4 @@
-import mongoose, { model, Schema } from "mongoose";
+import mongoose, { model, Mongoose, Schema } from "mongoose";
 
 mongoose
   .connect(
@@ -20,4 +20,17 @@ const ContentSchema = new Schema({
   userId: { type: mongoose.Types.ObjectId, ref: "User", required: true },
 });
 
+const LinkSchema = new Schema({
+  hash: String,
+
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: "User",
+    required: true,
+    unique: true,
+  },
+});
+
 export const ContentModel = model("Content", ContentSchema);
+
+export const LinkModel = model("Links", LinkSchema);
