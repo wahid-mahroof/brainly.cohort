@@ -1,9 +1,10 @@
 import express from "express";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
-import { ContentModel, UserModel } from "./db";
+import { ContentModel, LinkModel, UserModel } from "./db";
 import { server } from "typescript";
 import { userMiddleware } from "./middleware";
+import { random } from "./utils";
 
 const JWT_PASSWORD = "123123";
 
@@ -75,8 +76,61 @@ app.get("/api/v1/content", (req, res) => {});
 
 app.delete("/api/v1/content", (req, res) => {});
 
-app.post("/api/v1/brain/share", (req, res) => {});
+app.post("/api/v1/brain/share", userMiddleware, async (req, res) => {
+  const share = req.body.share;
+  if (share) {
+    const hash = random(10);
+    LinkModel.create({
+      userId: req.userId,
+      hash: hash,
+    });
 
-app.get("/api/v1/brain:shareLink", (req, res) => {});
+    res.json({
+      message: "/share/" + hash,
+    });
+  } else {
+    await LinkModel.deleteOne({
+      userId: req.userId,
+    });
+  }
+  res.json({
+    message: "Updated shareable link",
+  });
+});
+
+app.get("/api/v1/brain:shareLink", async (req, res) => {
+  const hash = req.params.shareLink;
+
+  const link = await LinkModel.findOne({
+    hash: hash,
+  });
+
+  if (!link) {
+    res.status(411).json({
+      message: "Sorry incorrect input",
+    });
+    return;
+  }
+
+  const content = await ContentModel.find({
+    _id: link?.userId,
+  });
+
+  const user = await UserModel.findOne({
+    userId: link.userId,
+  });
+
+  if (!user) {
+    res.status(411).json({
+      message: "user not ofund ,errror  should ideally not happend",
+    });
+    return;
+  }
+
+  res.json({
+    username: user.username,
+    content: content,
+  });
+});
 
 app.listen(3000);
